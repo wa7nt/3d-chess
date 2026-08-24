@@ -96,28 +96,37 @@ const MAT = {};
 const GEO_CACHE = {};
 
 function lathe(pts, segs) {
-  return new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), segs || 48);
+  return new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), segs || 64);
 }
 function sph(r, y, x, z) {
-  return { geo: new THREE.SphereGeometry(r, 22, 16), y, x: x || 0, z: z || 0 };
+  return { geo: new THREE.SphereGeometry(r, 28, 20), y, x: x || 0, z: z || 0 };
+}
+function ring(r, tube, y) {
+  return { geo: new THREE.TorusGeometry(r, tube, 12, 48), y, flat: true };
 }
 function knightHeadGeo() {
   const s = new THREE.Shape();
-  s.moveTo(-0.154, 0);
-  s.quadraticCurveTo(-0.22, 0.22, -0.1265, 0.374);
-  s.quadraticCurveTo(-0.099, 0.451, -0.011, 0.484);
-  s.lineTo(-0.0605, 0.572);
-  s.lineTo(-0.0055, 0.5005);
-  s.lineTo(0.0682, 0.561);
-  s.lineTo(0.0726, 0.4785);
-  s.quadraticCurveTo(0.187, 0.4235, 0.2695, 0.308);
-  s.lineTo(0.2893, 0.2365);
-  s.lineTo(0.2442, 0.1925);
-  s.quadraticCurveTo(0.11, 0.1705, 0.0682, 0.0605);
-  s.lineTo(0.1265, 0);
+  s.moveTo(-0.16, 0);
+  s.lineTo(-0.19, 0.06);
+  s.quadraticCurveTo(-0.235, 0.16, -0.21, 0.24);
+  s.quadraticCurveTo(-0.245, 0.30, -0.20, 0.36);
+  s.quadraticCurveTo(-0.225, 0.42, -0.15, 0.46);
+  s.quadraticCurveTo(-0.11, 0.49, -0.05, 0.505);
+  s.lineTo(-0.085, 0.585);
+  s.lineTo(-0.028, 0.515);
+  s.lineTo(0.045, 0.575);
+  s.lineTo(0.055, 0.49);
+  s.quadraticCurveTo(0.13, 0.46, 0.185, 0.395);
+  s.quadraticCurveTo(0.24, 0.33, 0.268, 0.268);
+  s.lineTo(0.292, 0.222);
+  s.quadraticCurveTo(0.30, 0.19, 0.272, 0.178);
+  s.lineTo(0.235, 0.185);
+  s.quadraticCurveTo(0.17, 0.175, 0.13, 0.13);
+  s.quadraticCurveTo(0.095, 0.09, 0.075, 0.045);
+  s.lineTo(0.12, 0);
   s.closePath();
-  const g = new THREE.ExtrudeGeometry(s, { depth: 0.225, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 2, steps: 1 });
-  g.translate(0, 0, -0.123);
+  const g = new THREE.ExtrudeGeometry(s, { depth: 0.24, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 3, steps: 1 });
+  g.translate(0, 0, -0.13);
   return g;
 }
 
@@ -126,37 +135,47 @@ function getParts(type) {
   let parts = [];
   if (type === 'p') {
     parts = [
-      { geo: lathe([[0.26, 0], [0.26, 0.04], [0.21, 0.07], [0.14, 0.12], [0.10, 0.20], [0.088, 0.28], [0.125, 0.305], [0.13, 0.33], [0.075, 0.35]]), y: 0 },
-      sph(0.135, 0.47)
+      { geo: lathe([[0.27, 0], [0.27, 0.035], [0.235, 0.055], [0.235, 0.075], [0.20, 0.10], [0.145, 0.14], [0.11, 0.20], [0.095, 0.27], [0.09, 0.305], [0.135, 0.33], [0.14, 0.355], [0.085, 0.375]]), y: 0 },
+      ring(0.118, 0.02, 0.345),
+      sph(0.14, 0.49)
     ];
   } else if (type === 'r') {
-    parts = [{ geo: lathe([[0.30, 0], [0.30, 0.05], [0.245, 0.09], [0.21, 0.15], [0.20, 0.38], [0.265, 0.44], [0.27, 0.56], [0, 0.56]]), y: 0 }];
-    for (let i = 0; i < 4; i++) {
-      const a = Math.PI / 4 + i * Math.PI / 2;
-      parts.push({ geo: new THREE.BoxGeometry(0.13, 0.11, 0.09), x: Math.cos(a) * 0.19, z: Math.sin(a) * 0.19, y: 0.615, rotY: -a });
+    parts = [
+      { geo: lathe([[0.31, 0], [0.31, 0.04], [0.27, 0.065], [0.27, 0.085], [0.225, 0.115], [0.20, 0.18], [0.19, 0.42], [0.185, 0.45], [0.26, 0.485], [0.265, 0.50], [0.26, 0.58], [0.17, 0.58], [0.165, 0.515], [0, 0.515]]), y: 0 },
+      ring(0.25, 0.022, 0.485)
+    ];
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 6 + i * Math.PI / 3;
+      parts.push({ geo: new THREE.BoxGeometry(0.115, 0.10, 0.085), x: Math.cos(a) * 0.20, z: Math.sin(a) * 0.20, y: 0.625, rotY: -a });
     }
   } else if (type === 'n') {
     parts = [
-      { geo: lathe([[0.30, 0], [0.30, 0.045], [0.24, 0.09], [0.205, 0.135], [0.225, 0.165], [0.185, 0.19], [0, 0.19]]), y: 0 },
+      { geo: lathe([[0.30, 0], [0.30, 0.045], [0.25, 0.085], [0.25, 0.105], [0.21, 0.14], [0.225, 0.165], [0.19, 0.19], [0, 0.19]]), y: 0 },
+      ring(0.235, 0.02, 0.10),
       { geo: knightHeadGeo(), y: 0.185 }
     ];
   } else if (type === 'b') {
     parts = [
-      { geo: lathe([[0.28, 0], [0.28, 0.045], [0.225, 0.085], [0.145, 0.16], [0.105, 0.26], [0.14, 0.29], [0.145, 0.315], [0.09, 0.335], [0.13, 0.42], [0.155, 0.50], [0.13, 0.57], [0.06, 0.63], [0.024, 0.65], [0, 0.655]]), y: 0 },
-      sph(0.038, 0.69)
+      { geo: lathe([[0.29, 0], [0.29, 0.04], [0.25, 0.065], [0.25, 0.085], [0.19, 0.12], [0.13, 0.18], [0.105, 0.26], [0.10, 0.31], [0.15, 0.335], [0.155, 0.36], [0.095, 0.38], [0.14, 0.45], [0.165, 0.52], [0.145, 0.585], [0.09, 0.63], [0.042, 0.66], [0.02, 0.675], [0, 0.68]]), y: 0 },
+      ring(0.128, 0.02, 0.365),
+      sph(0.042, 0.725)
     ];
   } else if (type === 'q') {
-    parts = [{ geo: lathe([[0.31, 0], [0.31, 0.05], [0.25, 0.10], [0.165, 0.20], [0.12, 0.34], [0.10, 0.48], [0.095, 0.55], [0.14, 0.575], [0.145, 0.60], [0.095, 0.62], [0.15, 0.70], [0.185, 0.76], [0.19, 0.78], [0.11, 0.79], [0, 0.80]]), y: 0 }];
-    for (let i = 0; i < 6; i++) {
-      const a = i * Math.PI / 3;
-      parts.push(sph(0.034, 0.815, Math.cos(a) * 0.155, Math.sin(a) * 0.155));
+    parts = [
+      { geo: lathe([[0.32, 0], [0.32, 0.045], [0.275, 0.075], [0.275, 0.095], [0.21, 0.135], [0.155, 0.20], [0.125, 0.29], [0.105, 0.41], [0.098, 0.50], [0.095, 0.565], [0.15, 0.59], [0.155, 0.615], [0.10, 0.635], [0.13, 0.71], [0.165, 0.765], [0.19, 0.80], [0.195, 0.825], [0.115, 0.83], [0, 0.84]]), y: 0 },
+      ring(0.155, 0.022, 0.60)
+    ];
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      parts.push(sph(0.034, 0.845, Math.cos(a) * 0.168, Math.sin(a) * 0.168));
     }
-    parts.push(sph(0.055, 0.845));
+    parts.push(sph(0.06, 0.875));
   } else if (type === 'k') {
     parts = [
-      { geo: lathe([[0.32, 0], [0.32, 0.05], [0.26, 0.10], [0.175, 0.21], [0.13, 0.36], [0.108, 0.52], [0.102, 0.58], [0.148, 0.605], [0.153, 0.63], [0.10, 0.65], [0.155, 0.72], [0.19, 0.78], [0.195, 0.80], [0.115, 0.81], [0, 0.82]]), y: 0 },
-      { geo: new THREE.BoxGeometry(0.055, 0.20, 0.055), y: 0.91 },
-      { geo: new THREE.BoxGeometry(0.15, 0.055, 0.055), y: 0.925 }
+      { geo: lathe([[0.33, 0], [0.33, 0.045], [0.285, 0.075], [0.285, 0.095], [0.22, 0.135], [0.165, 0.21], [0.135, 0.32], [0.112, 0.46], [0.105, 0.55], [0.10, 0.605], [0.155, 0.63], [0.16, 0.655], [0.105, 0.675], [0.14, 0.74], [0.17, 0.79], [0.185, 0.83], [0.175, 0.865], [0.13, 0.895], [0.075, 0.915], [0.025, 0.925], [0, 0.928]]), y: 0 },
+      ring(0.165, 0.022, 0.645),
+      { geo: new THREE.BoxGeometry(0.05, 0.19, 0.05), y: 1.015 },
+      { geo: new THREE.BoxGeometry(0.15, 0.05, 0.05), y: 1.025 }
     ];
   }
   GEO_CACHE[type] = parts;
@@ -164,10 +183,71 @@ function getParts(type) {
 }
 
 function makeMaterials() {
-  MAT.w = new THREE.MeshPhysicalMaterial({ color: 0xf0e6d2, roughness: 0.3, metalness: 0.02, clearcoat: 0.55, clearcoatRoughness: 0.3 });
-  MAT.b = new THREE.MeshPhysicalMaterial({ color: 0x1d2127, roughness: 0.32, metalness: 0.12, clearcoat: 0.65, clearcoatRoughness: 0.22 });
+  MAT.w = new THREE.MeshPhysicalMaterial({ color: 0xf0e6d2, roughness: 0.22, metalness: 0.02, clearcoat: 0.6, clearcoatRoughness: 0.25 });
+  MAT.b = new THREE.MeshPhysicalMaterial({ color: 0x1d2127, roughness: 0.25, metalness: 0.12, clearcoat: 0.7, clearcoatRoughness: 0.2 });
   MAT.w.color.convertSRGBToLinear();
   MAT.b.color.convertSRGBToLinear();
+}
+
+function makeEnvironment() {
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 512;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 512);
+  g.addColorStop(0, '#3d4a63');
+  g.addColorStop(0.42, '#242c3a');
+  g.addColorStop(0.5, '#4a3d2a');
+  g.addColorStop(0.58, '#141820');
+  g.addColorStop(1, '#0a0c10');
+  x.fillStyle = g;
+  x.fillRect(0, 0, 1024, 512);
+  function glow(cx, cy, r, color) {
+    const rg = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+    rg.addColorStop(0, color);
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = rg;
+    x.fillRect(cx - r, cy - r, r * 2, r * 2);
+  }
+  glow(270, 110, 200, 'rgba(255,242,216,0.9)');
+  glow(770, 80, 160, 'rgba(185,205,255,0.55)');
+  glow(520, 140, 130, 'rgba(255,215,170,0.3)');
+  glow(60, 160, 110, 'rgba(255,230,200,0.35)');
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  return tex;
+}
+
+function buildTable() {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0x452d1a, roughness: 0.62, metalness: 0.04 });
+  wood.color.convertSRGBToLinear();
+  const brass = new THREE.MeshStandardMaterial({ color: 0xcfa85c, roughness: 0.3, metalness: 0.8 });
+  brass.color.convertSRGBToLinear();
+
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 7.5, 0.36, 72), wood);
+  top.position.y = -0.39;
+  top.receiveShadow = true;
+  top.castShadow = true;
+  g.add(top);
+
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(7.5, 0.035, 10, 96), brass);
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = -0.21;
+  g.add(rim);
+
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.95, 2.0, 48), wood);
+  ped.position.y = -1.57;
+  ped.castShadow = true;
+  g.add(ped);
+
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.5, 0.3, 64), wood);
+  foot.position.y = -2.72;
+  foot.castShadow = true;
+  foot.receiveShadow = true;
+  g.add(foot);
+
+  scene.add(g);
 }
 
 function buildPieceMesh(type, color) {
@@ -175,6 +255,7 @@ function buildPieceMesh(type, color) {
   for (const p of getParts(type)) {
     const mesh = new THREE.Mesh(p.geo, color === 'w' ? MAT.w : MAT.b);
     mesh.position.set(p.x || 0, p.y || 0, p.z || 0);
+    if (p.flat) mesh.rotation.x = Math.PI / 2;
     if (p.rotY) mesh.rotation.y = p.rotY;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -313,8 +394,8 @@ function updateCheckMarker() {
 
 function initScene() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x070a10);
-  scene.fog = new THREE.Fog(0x070a10, 18, 46);
+  scene.background = new THREE.Color(0x141a26);
+  scene.fog = new THREE.Fog(0x141a26, 20, 46);
 
   camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 120);
   camera.position.set(0, 7.2, 10);
@@ -326,8 +407,10 @@ function initScene() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.15;
   document.getElementById('scene').appendChild(renderer.domElement);
+
+  scene.environment = makeEnvironment();
 
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.15, 0);
@@ -337,12 +420,12 @@ function initScene() {
   controls.minDistance = 6;
   controls.maxDistance = 22;
   controls.minPolarAngle = 0.12;
-  controls.maxPolarAngle = 1.42;
+  controls.maxPolarAngle = 1.45;
   controls.update();
 
-  scene.add(new THREE.HemisphereLight(0xbdd2ff, 0x241708, 0.5));
+  scene.add(new THREE.HemisphereLight(0xbdd2ff, 0x241708, 0.32));
 
-  const key = new THREE.DirectionalLight(0xfff0da, 1.0);
+  const key = new THREE.DirectionalLight(0xfff0da, 0.9);
   key.position.set(6, 12, 7);
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
@@ -356,7 +439,7 @@ function initScene() {
   key.shadow.normalBias = 0.02;
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0x93a7c8, 0.35);
+  const fill = new THREE.DirectionalLight(0x93a7c8, 0.25);
   fill.position.set(-7, 6, -5);
   scene.add(fill);
 
@@ -365,14 +448,7 @@ function initScene() {
   piecesGroup = new THREE.Group();
   scene.add(piecesGroup);
 
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(34, 48),
-    new THREE.MeshStandardMaterial({ color: 0x0d1118, roughness: 0.96 })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.161;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  buildTable();
 
   initFx();
 
