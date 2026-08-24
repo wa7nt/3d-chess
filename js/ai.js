@@ -471,4 +471,4 @@ function findBestMove(realGame, difficulty) {
   return bestMove;
 }
 
-window.ChessAI = { findBestMove };
+(typeof window !== 'undefined' ? window : self).ChessAI = { findBestMove };

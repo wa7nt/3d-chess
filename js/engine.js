@@ -506,4 +506,4 @@ class ChessEngine {
   }
 }
 
-window.ChessEngine = ChessEngine;
+(typeof window !== 'undefined' ? window : self).ChessEngine = ChessEngine;

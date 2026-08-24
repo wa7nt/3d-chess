@@ -15,6 +15,65 @@ let gameOver = false;
 let busy = false;
 let aiTimer = null;
 let promoPending = null;
+let aiWorker = null;
+let aiSearchId = 0;
+let aiThinking = false;
+
+function getAiWorker() {
+  if (aiWorker !== null) return aiWorker;
+  try {
+    const w = new Worker('js/ai-worker.js');
+    w.onmessage = e => {
+      if (e.data.id !== aiSearchId || !aiThinking) return;
+      aiThinking = false;
+      const m = e.data.move;
+      if (m && !gameOver) doMove(m);
+      else { busy = false; updateStatusText(); }
+    };
+    w.onerror = () => {
+      aiWorker = null;
+      if (aiThinking) {
+        aiThinking = false;
+        const m = ChessAI.findBestMove(engine, aiLevel);
+        busy = false;
+        if (m && !gameOver) doMove(m);
+      }
+    };
+    aiWorker = w;
+  } catch (e) {
+    aiWorker = null;
+  }
+  return aiWorker;
+}
+
+function cancelAiSearch() {
+  clearTimeout(aiTimer);
+  aiSearchId++;
+  aiThinking = false;
+  if (aiWorker) {
+    aiWorker.terminate();
+    aiWorker = null;
+  }
+  busy = false;
+}
+
+function aiMove() {
+  if (gameOver) return;
+  const w = getAiWorker();
+  if (w) {
+    const id = aiSearchId;
+    aiThinking = true;
+    busy = true;
+    w.postMessage({
+      id,
+      difficulty: aiLevel,
+      fen: `${engine.fenPrefix()} ${engine.halfmove} ${engine.fullmove}`
+    });
+  } else {
+    const m = ChessAI.findBestMove(engine, aiLevel);
+    if (m) doMove(m);
+  }
+}
 
 function isHumanTurn() {
   return mode === 'pvp' || engine.turn === humanColor;
@@ -241,12 +300,6 @@ function doMove(move) {
   });
 }
 
-function aiMove() {
-  if (gameOver) return;
-  const m = ChessAI.findBestMove(engine, aiLevel);
-  if (m) doMove(m);
-}
-
 function checkGameEnd() {
   if (!engine.hasLegalMoves()) {
     gameOver = true;
@@ -279,8 +332,8 @@ function showOver(title, text) {
 }
 
 function undo() {
-  if (busy || !sanHistory.length) return;
-  clearTimeout(aiTimer);
+  if ((busy && !aiThinking) || !sanHistory.length) return;
+  cancelAiSearch();
   document.getElementById('promo-modal').classList.remove('open');
   promoPending = null;
 
@@ -310,7 +363,7 @@ function undo() {
 }
 
 function newGame() {
-  clearTimeout(aiTimer);
+  cancelAiSearch();
   mode = document.querySelector('#mode-seg .active').dataset.mode;
   humanColor = document.getElementById('human-color').value;
   aiLevel = +document.getElementById('ai-level').value;
