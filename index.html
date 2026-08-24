@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>3D Шахматы</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="scene"></div>
+
+  <aside id="side">
+    <div id="brand">
+      <h1><span>♛</span> 3D ШАХМАТЫ</h1>
+      <div id="status">Ход белых</div>
+    </div>
+
+    <hr>
+
+    <div class="opts">
+      <div class="sec-title">Режим игры</div>
+      <div class="seg" id="mode-seg">
+        <button data-mode="pvp" class="active">Человек × Человек</button>
+        <button data-mode="ai">Против компьютера</button>
+      </div>
+      <div id="ai-only">
+        <div class="opt-row">
+          <label>Ваш цвет</label>
+          <select id="human-color">
+            <option value="w" selected>Белые</option>
+            <option value="b">Чёрные</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <label>Уровень</label>
+          <select id="ai-level">
+            <option value="1">Легко</option>
+            <option value="2" selected>Средне</option>
+            <option value="3">Сложно</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="btn-grid">
+      <button class="act primary" id="btn-new">Новая партия</button>
+      <button class="act" id="btn-undo">Отменить ход</button>
+      <button class="act" id="btn-flip">Перевернуть вид</button>
+      <button class="act" id="btn-sound">Звук: вкл</button>
+    </div>
+
+    <hr>
+
+    <div class="caps">
+      <div class="cap-row">
+        <span class="lbl">Взяли белые:</span>
+        <span class="glyphs b-glyph" id="caps-w"></span>
+        <span class="score-chip" id="score-w"></span>
+      </div>
+      <div class="cap-row">
+        <span class="lbl">Взяли чёрные:</span>
+        <span class="glyphs w-glyph" id="caps-b"></span>
+        <span class="score-chip" id="score-b"></span>
+      </div>
+    </div>
+
+    <hr>
+
+    <div id="moves-wrap">
+      <div class="sec-title">Партия</div>
+      <div id="moves"><div class="empty-hint">Ходов пока нет</div></div>
+    </div>
+  </aside>
+
+  <div id="hint">Клик — выбрать фигуру и поле &nbsp;·&nbsp; перетаскивание — поворот камеры &nbsp;·&nbsp; колесо — масштаб</div>
+
+  <!-- Выбор фигуры при превращении пешки -->
+  <div class="modal-back" id="promo-modal">
+    <div class="modal">
+      <h2>Превращение пешки</h2>
+      <p>Выберите фигуру</p>
+      <div class="promo-btns" id="promo-btns"></div>
+    </div>
+  </div>
+
+  <!-- Итог партии -->
+  <div class="modal-back" id="over-modal">
+    <div class="modal">
+      <h2 id="over-title">Мат!</h2>
+      <p id="over-text"></p>
+      <div class="btn-grid">
+        <button class="act primary" id="over-new">Новая партия</button>
+        <button class="act" id="over-close">Посмотреть доску</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="lib/three.min.js"></script>
+  <script src="lib/OrbitControls.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
