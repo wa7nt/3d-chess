@@ -389,6 +389,16 @@ function renderHistory() {
 }
 
 function wireUi() {
+  const setPanel = hidden => {
+    document.body.classList.toggle('side-collapsed', hidden);
+    try { localStorage.setItem('chess-panel', hidden ? 'hidden' : 'shown'); } catch (e) {}
+  };
+  document.getElementById('side-toggle').addEventListener('click', () => setPanel(true));
+  document.getElementById('side-open').addEventListener('click', () => setPanel(false));
+  try {
+    if (localStorage.getItem('chess-panel') === 'hidden') setPanel(true);
+  } catch (e) {}
+
   document.querySelectorAll('#mode-seg button').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#mode-seg button').forEach(b => b.classList.remove('active'));
