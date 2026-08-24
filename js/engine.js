@@ -4,6 +4,30 @@ const FILES = 'abcdefgh';
 
 function sqName(sq) { return FILES[sq & 7] + ((sq >> 3) + 1); }
 
+const Z = { piece: [], side: 0, castle: [], ep: [] };
+(function initZobrist() {
+  let s = 0x9e3779b9;
+  const rnd = () => {
+    s ^= s << 13; s |= 0;
+    s ^= s >>> 17;
+    s ^= s << 5; s |= 0;
+    return s;
+  };
+  for (let p = 0; p < 12; p++) {
+    Z.piece[p] = [];
+    for (let i = 0; i < 64; i++) Z.piece[p][i] = rnd();
+  }
+  Z.side = rnd();
+  for (let i = 0; i < 16; i++) Z.castle[i] = rnd();
+  for (let i = 0; i < 8; i++) Z.ep[i] = rnd();
+})();
+
+const PIECE_ZIDX = { P: 0, N: 1, B: 2, R: 3, Q: 4, K: 5, p: 6, n: 7, b: 8, r: 9, q: 10, k: 11 };
+
+function castleMask(c) {
+  return (c.wK ? 1 : 0) | (c.wQ ? 2 : 0) | (c.bK ? 4 : 0) | (c.bQ ? 8 : 0);
+}
+
 class ChessEngine {
   constructor(fen) {
     this.reset(fen || ChessEngine.START_FEN);
@@ -46,6 +70,26 @@ class ChessEngine {
       if (this.board[i] === 'K') this.kings.w = i;
       else if (this.board[i] === 'k') this.kings.b = i;
     }
+    this.hash = 0;
+    for (let i = 0; i < 64; i++) {
+      const p = this.board[i];
+      if (p) this.hash ^= Z.piece[PIECE_ZIDX[p]][i];
+    }
+    if (this.turn === 'b') this.hash ^= Z.side;
+    this.hash ^= Z.castle[castleMask(this.castling)];
+    if (this.ep >= 0) this.hash ^= Z.ep[this.ep & 7];
+  }
+
+  computeHash() {
+    let h = 0;
+    for (let i = 0; i < 64; i++) {
+      const p = this.board[i];
+      if (p) h ^= Z.piece[PIECE_ZIDX[p]][i];
+    }
+    if (this.turn === 'b') h ^= Z.side;
+    h ^= Z.castle[castleMask(this.castling)];
+    if (this.ep >= 0) h ^= Z.ep[this.ep & 7];
+    return h | 0;
   }
 
   fenPrefix() {
@@ -269,10 +313,24 @@ class ChessEngine {
       capturedPiece: m.captured,
       prevCastling: { ...this.castling },
       prevEp: this.ep,
-      prevHalfmove: this.halfmove
+      prevHalfmove: this.halfmove,
+      prevHash: this.hash
     };
     const us = this.turn;
     this.history.push(rec);
+
+    if (m.null) {
+      if (this.ep >= 0) this.hash ^= Z.ep[this.ep & 7];
+      this.ep = -1;
+      this.halfmove++;
+      this.hash ^= Z.side;
+      this.turn = us === 'w' ? 'b' : 'w';
+      return rec;
+    }
+
+    let h = this.hash ^ Z.side;
+    if (this.ep >= 0) h ^= Z.ep[this.ep & 7];
+    const oldMask = castleMask(this.castling);
 
     this.ep = -1;
     this.halfmove++;
@@ -280,28 +338,29 @@ class ChessEngine {
     if (m.captured) this.halfmove = 0;
     if (m.piece.toLowerCase() === 'p') this.halfmove = 0;
 
-    // взятие (в т.ч. на проходе)
     if (m.ep) {
       const capSq = us === 'w' ? m.to - 8 : m.to + 8;
+      h ^= Z.piece[PIECE_ZIDX[this.board[capSq]]][capSq];
       this.board[capSq] = null;
+    } else if (m.captured) {
+      h ^= Z.piece[PIECE_ZIDX[m.captured]][m.to];
     }
 
-    // перемещение фигуры
+    h ^= Z.piece[PIECE_ZIDX[m.piece]][m.from];
     this.board[m.to] = m.promotion || m.piece;
     this.board[m.from] = null;
+    h ^= Z.piece[PIECE_ZIDX[m.promotion || m.piece]][m.to];
 
-    // рокировка — двигаем ладью
     if (m.castle) {
       if (us === 'w') {
-        if (m.castle === 'k') { this.board[5] = 'R'; this.board[7] = null; }
-        else { this.board[3] = 'R'; this.board[0] = null; }
+        if (m.castle === 'k') { this.board[5] = 'R'; this.board[7] = null; h ^= Z.piece[3][7] ^ Z.piece[3][5]; }
+        else { this.board[3] = 'R'; this.board[0] = null; h ^= Z.piece[3][0] ^ Z.piece[3][3]; }
       } else {
-        if (m.castle === 'k') { this.board[61] = 'r'; this.board[63] = null; }
-        else { this.board[59] = 'r'; this.board[56] = null; }
+        if (m.castle === 'k') { this.board[61] = 'r'; this.board[63] = null; h ^= Z.piece[9][63] ^ Z.piece[9][61]; }
+        else { this.board[59] = 'r'; this.board[56] = null; h ^= Z.piece[9][56] ^ Z.piece[9][59]; }
       }
     }
 
-    // права на рокировку
     if (m.piece === 'K') { this.castling.wK = false; this.castling.wQ = false; }
     if (m.piece === 'k') { this.castling.bK = false; this.castling.bQ = false; }
     if (m.from === 0 || m.to === 0) this.castling.wQ = false;
@@ -309,25 +368,36 @@ class ChessEngine {
     if (m.from === 56 || m.to === 56) this.castling.bQ = false;
     if (m.from === 63 || m.to === 63) this.castling.bK = false;
 
-    // взятие на угловой клетке ладьи уже покрыто проверкой to выше
+    h ^= Z.castle[oldMask] ^ Z.castle[castleMask(this.castling)];
 
-    // двойной ход пешки — битое поле
-    if (m.double) this.ep = (m.from + m.to) >> 1;
+    if (m.double) {
+      this.ep = (m.from + m.to) >> 1;
+      h ^= Z.ep[this.ep & 7];
+    }
 
     if (m.piece === 'K') this.kings.w = m.to;
     if (m.piece === 'k') this.kings.b = m.to;
 
     if (us === 'b') this.fullmove++;
     this.turn = us === 'w' ? 'b' : 'w';
+    this.hash = h | 0;
     return rec;
   }
 
   unmake() {
     const rec = this.history.pop();
     const m = rec.m;
-    const mover = this.turn === 'w' ? 'b' : 'w'; // кто делал ход
+    const mover = this.turn === 'w' ? 'b' : 'w';
     this.turn = mover;
+    this.hash = rec.prevHash;
     if (mover === 'b') this.fullmove--;
+
+    if (m.null) {
+      this.ep = rec.prevEp;
+      this.halfmove = rec.prevHalfmove;
+      this.castling = rec.prevCastling;
+      return rec;
+    }
 
     this.board[m.from] = m.piece;
     this.board[m.to] = null;
@@ -430,6 +500,7 @@ class ChessEngine {
     c.halfmove = this.halfmove;
     c.fullmove = this.fullmove;
     c.kings = { ...this.kings };
+    c.hash = this.hash;
     c.history = [];
     return c;
   }
